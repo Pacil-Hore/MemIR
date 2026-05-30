@@ -3,7 +3,7 @@ services:
     build: .
     image: memir:latest
     container_name: memir
-    restart: unless-stopped   # survive crash & reboot VPS
+    restart: unless-stopped   # survive crash & reboot VPS :3
     env_file: .env
     volumes:
       - memir-data:/data      # DB tahan redeploy
