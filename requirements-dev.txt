@@ -1,0 +1,3 @@
+# Dipakai CI & dev lokal. Tes pakai FakeEmbedder → torch TIDAK dibutuhkan.
+numpy>=1.24
+pytest>=8

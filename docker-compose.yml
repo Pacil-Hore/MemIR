@@ -1,0 +1,14 @@
+services:
+  memir:
+    build: .
+    image: memir:latest
+    container_name: memir
+    restart: unless-stopped   # survive crash & reboot VPS
+    env_file: .env
+    volumes:
+      - memir-data:/data      # DB tahan redeploy
+      - memir-cache:/cache    # bobot model gak re-download tiap deploy
+
+volumes:
+  memir-data:
+  memir-cache:

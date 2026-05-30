@@ -8,6 +8,7 @@ untuk cosine = dot product atas vektor ternormalisasi.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from abc import ABC, abstractmethod
 
@@ -44,6 +45,9 @@ class MemoryStore(ABC):
 class SqliteStore(MemoryStore):
     def __init__(self, db_path: str, dim: int) -> None:
         self._dim = dim
+        parent = os.path.dirname(db_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         self._conn = sqlite3.connect(db_path)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._create_schema()

@@ -1,0 +1,13 @@
+.git
+.github
+docs
+tests
+*.md
+__pycache__
+*.py[cod]
+*.db
+*.db-*
+.env
+.venv
+venv
+requirements-dev.txt

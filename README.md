@@ -32,11 +32,51 @@ Di **Discord Developer Portal → Bot**, aktifkan **Message Content Intent**
 (tanpa ini `msg.content` selalu kosong). Invite bot dengan izin baca pesan +
 **Read Message History** (untuk `!reindex`).
 
-## Jalankan
+## Jalankan (lokal)
 
 ```bash
 python -m memir
 ```
+
+## Deploy di VPS (Docker, 24/7)
+
+`restart: unless-stopped` bikin bot otomatis nyala lagi kalau crash atau VPS
+reboot. Volume bikin DB (memori) & bobot model tahan redeploy.
+
+**Setup sekali di VPS** (sudah ada Docker + Docker Compose):
+
+```bash
+git clone <repo-url> memir && cd memir
+cp .env.example .env && nano .env     # isi DISCORD_TOKEN
+docker compose up -d --build          # build pertama agak lama (torch + model)
+docker compose logs -f                # cek "MemIR siap sebagai ..."
+```
+
+Perintah harian: `docker compose up -d --build` (deploy), `docker compose down`
+(stop), `docker compose logs -f` (log).
+
+## CI/CD (GitHub Actions)
+
+`.github/workflows/ci-cd.yml`:
+
+- **CI** (tiap push & PR): compile + `pytest`. Pakai FakeEmbedder → **tanpa
+  torch**, jadi cepat.
+- **CD** (push ke `main`, setelah CI lulus): SSH ke VPS → `git pull` +
+  `docker compose up -d --build`.
+
+Set secret repo di **Settings → Secrets and variables → Actions**:
+
+| Secret | Isi |
+|---|---|
+| `VPS_HOST` | IP / hostname VPS |
+| `VPS_USER` | user SSH (mis. `deploy`) |
+| `VPS_SSH_KEY` | private key SSH (yang publik-nya ada di `authorized_keys` VPS) |
+| `VPS_APP_DIR` | path repo di VPS (mis. `/home/deploy/memir`) |
+
+Token bot **tidak** masuk GitHub secrets — cukup ada di `.env` pada VPS.
+
+### Sizing VPS
+~1–2 GB RAM (torch + e5-small di CPU) dan ~3–4 GB disk (image + bobot model).
 
 ## Command
 

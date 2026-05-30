@@ -33,4 +33,10 @@ class Config:
                 "DISCORD_TOKEN belum diset. Salin .env.example jadi .env "
                 "lalu isi token bot."
             )
-        return cls(discord_token=token)
+        # Override opsional via env — dipakai saat deploy (volume Docker, dll).
+        return cls(
+            discord_token=token,
+            db_path=os.getenv("MEMIR_DB_PATH", cls.db_path),
+            model_name=os.getenv("MEMIR_MODEL", cls.model_name),
+            threshold=float(os.getenv("MEMIR_THRESHOLD", cls.threshold)),
+        )
