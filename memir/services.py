@@ -44,6 +44,6 @@ class RecallService:
         self._top_k = top_k
         self._threshold = threshold
 
-    def recall(self, query: str, user_id: str | None = None) -> list[SearchResult]:
+    def recall(self, query: str, guild_id: str, user_id: str | None = None) -> list[SearchResult]:
         qvec = self._embedder.embed_query(query)
-        return self._store.search(qvec, self._top_k, self._threshold, user_id)
+        return self._store.search(qvec, self._top_k, self._threshold, guild_id, user_id)

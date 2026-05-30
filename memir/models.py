@@ -14,6 +14,7 @@ class MessageRecord:
     """
 
     id: str          # message ID Discord (unik, idempotent)
+    guild_id: str    # server asal — scope isolation antar server
     user_id: str     # author — sumber kebenaran untuk filter opsional
     username: str    # hanya untuk display; bisa berubah, jangan dipakai filter
     channel_id: str  # konteks; dipakai untuk membangun link ke pesan

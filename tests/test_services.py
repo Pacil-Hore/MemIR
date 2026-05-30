@@ -9,8 +9,8 @@ from memir.store import SqliteStore
 from .fakes import FakeEmbedder
 
 
-def _rec(id_: str, user_id: str, content: str) -> MessageRecord:
-    return MessageRecord(id_, user_id, "u" + user_id, "c1", content, int(id_))
+def _rec(id_: str, user_id: str, content: str, guild_id: str = "G1") -> MessageRecord:
+    return MessageRecord(id_, guild_id, user_id, "u" + user_id, "c1", content, int(id_))
 
 
 def _setup():
@@ -47,7 +47,7 @@ def test_recall_finds_semantic_overlap():
             _rec("3", "A", "rapat tim pagi"),
         ]
     )
-    results = recall.recall("deadline proyek")
+    results = recall.recall("deadline proyek", guild_id="G1")
     assert results
     assert results[0].record.id == "1"
 
@@ -60,5 +60,19 @@ def test_recall_author_filter():
             _rec("2", "B", "deadline proyek juga"),
         ]
     )
-    results = recall.recall("deadline proyek", user_id="B")
+    results = recall.recall("deadline proyek", guild_id="G1", user_id="B")
     assert [r.record.id for r in results] == ["2"]
+
+
+def test_recall_guild_isolation():
+    ingest, recall, _ = _setup()
+    ingest.ingest_many(
+        [
+            _rec("1", "A", "deadline proyek besok", guild_id="G1"),
+            _rec("2", "A", "deadline proyek besok", guild_id="G2"),
+        ]
+    )
+    r1 = recall.recall("deadline proyek", guild_id="G1")
+    r2 = recall.recall("deadline proyek", guild_id="G2")
+    assert [r.record.id for r in r1] == ["1"]
+    assert [r.record.id for r in r2] == ["2"]

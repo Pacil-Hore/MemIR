@@ -24,6 +24,7 @@ _SNIPPET_LEN = 200
 def _to_record(message: discord.Message) -> MessageRecord:
     return MessageRecord(
         id=str(message.id),
+        guild_id=str(message.guild.id),
         user_id=str(message.author.id),
         username=message.author.display_name,
         channel_id=str(message.channel.id),
@@ -91,7 +92,7 @@ def build_bot(
         mention = ctx.message.mentions[0] if ctx.message.mentions else None
         user_id = str(mention.id) if mention else None
 
-        results = await asyncio.to_thread(recall.recall, clean, user_id)
+        results = await asyncio.to_thread(recall.recall, clean, str(ctx.guild.id), user_id)
         if not results:
             await ctx.reply("Gak nemu pesan yang relevan soal itu 🤷")
             return
