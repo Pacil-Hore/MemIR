@@ -43,17 +43,8 @@ python -m memir
 `restart: unless-stopped` bikin bot otomatis nyala lagi kalau crash atau VPS
 reboot. Volume bikin DB (memori) & bobot model tahan redeploy.
 
-**Setup sekali di VPS** (sudah ada Docker + Docker Compose):
-
-```bash
-git clone <repo-url> memir && cd memir
-cp .env.example .env && nano .env     # isi DISCORD_TOKEN
-docker compose up -d --build          # build pertama agak lama (torch + model)
-docker compose logs -f                # cek "MemIR siap sebagai ..."
-```
-
-Perintah harian: `docker compose up -d --build` (deploy), `docker compose down`
-(stop), `docker compose logs -f` (log).
+Deploy **sepenuhnya lewat GitHub Actions** — gak perlu login ke VPS manual.
+Lihat CI/CD di bawah.
 
 ## CI/CD (GitHub Actions)
 
@@ -61,19 +52,26 @@ Perintah harian: `docker compose up -d --build` (deploy), `docker compose down`
 
 - **CI** (tiap push & PR): compile + `pytest`. Pakai FakeEmbedder → **tanpa
   torch**, jadi cepat.
-- **CD** (push ke `main`, setelah CI lulus): SSH ke VPS → `git pull` +
-  `docker compose up -d --build`.
+- **CD** (push ke `main`, setelah CI lulus): Actions `scp` file proyek ke VPS →
+  SSH → tulis `.env` dari secret → `docker compose up -d --build`. VPS tidak
+  butuh akses GitHub (aman untuk repo private).
 
 Set secret repo di **Settings → Secrets and variables → Actions**:
 
 | Secret | Isi |
 |---|---|
 | `VPS_HOST` | IP / hostname VPS |
-| `VPS_USER` | user SSH (mis. `deploy`) |
-| `VPS_SSH_KEY` | private key SSH (yang publik-nya ada di `authorized_keys` VPS) |
-| `VPS_APP_DIR` | path repo di VPS (mis. `/home/deploy/memir`) |
+| `VPS_USER` | user SSH |
+| `VPS_PORT` | port SSH (mis. `22`) |
+| `DEPLOY_PATH` | folder tujuan di VPS (mis. `/home/amphoreus/memir`) |
+| `VPS_SSH_KEY` | private key SSH yang bisa login ke VPS |
+| `DISCORD_TOKEN` | token bot — Actions yang nulis ke `.env` di VPS |
 
-Token bot **tidak** masuk GitHub secrets — cukup ada di `.env` pada VPS.
+**Prasyarat di VPS (sekali saja):** Docker akan dipasang otomatis oleh workflow
+**jika** user SSH bisa `sudo` tanpa password (atau login sebagai `root`). Kalau
+sudo butuh password, pasang Docker manual sekali:
+`curl -fsSL https://get.docker.com | sudo sh` lalu
+`sudo usermod -aG docker <user>`. Setelah itu semua deploy berikutnya otomatis.
 
 ### Sizing VPS
 ~1–2 GB RAM (torch + e5-small di CPU) dan ~3–4 GB disk (image + bobot model).

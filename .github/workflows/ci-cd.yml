@@ -25,15 +25,40 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy ke VPS via SSH
+      - uses: actions/checkout@v4
+
+      # 1. Kirim file yang dibutuhkan ke VPS (VPS gak perlu akses GitHub).
+      - name: Copy files ke VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "Dockerfile,docker-compose.yml,requirements.txt,.dockerignore,memir"
+          target: ${{ secrets.DEPLOY_PATH }}
+
+      # 2. Tulis .env dari secret, lalu (re)build & up via docker compose.
+      - name: Build & restart di VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DISCORD_TOKEN,DEPLOY_PATH
           script: |
             set -e
-            cd "${{ secrets.VPS_APP_DIR }}"
-            git pull --ff-only
-            docker compose up -d --build
-            docker image prune -f
+            # Pasang Docker sekali kalau belum ada (butuh sudo tanpa password / root).
+            if ! command -v docker >/dev/null 2>&1; then
+              curl -fsSL https://get.docker.com | sudo sh
+            fi
+            # Pakai sudo hanya bila user belum punya akses docker tanpa sudo.
+            if docker info >/dev/null 2>&1; then DC="docker"; else DC="sudo docker"; fi
+            cd "$DEPLOY_PATH"
+            printf 'DISCORD_TOKEN=%s\n' "$DISCORD_TOKEN" > .env
+            $DC compose up -d --build
+            $DC image prune -f
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
